@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics.Tracing;
 using System.IO;
 using System.Net;
 using System.Text.Json.Serialization;
@@ -18,6 +19,8 @@ namespace Speechtotext
 
         public static string openAI(string inputText)
         {
+            
+
             var apiKey = "";
             var model = "text-davinci-003";
             var prompt = inputText;
@@ -59,9 +62,21 @@ namespace Speechtotext
             {
                 Console.WriteLine("Speak");
 
+            
+                config.SpeechSynthesisVoiceName = "en-GB-RyanNeural";
+
+                using var synthesizer = new SpeechSynthesizer(config);
+                await synthesizer.SpeakTextAsync("Hello Deepesh!!!!! My Name is Jarvis, How can I help you today");
+                
+                await synthesizer.SpeakTextAsync("Please ask your question my Majesty, I am greatful that you are my creator");
+
+               
+                   
                 recog.Recognizing += (sender, eventArgs) =>
                 {
-                    Console.WriteLine($"Recognizing: {eventArgs.Result.Text}");
+                    
+                        Console.WriteLine($"Recognizing: {eventArgs.Result.Text}");
+                    
                 };
 
                 recog.Recognized += async (sender, eventArgs) =>
@@ -72,9 +87,10 @@ namespace Speechtotext
                     {
 
                         config.SpeechSynthesisVoiceName = "en-GB-RyanNeural";
+
                         using var synthesizer = new SpeechSynthesizer(config);
 
-                        Console.WriteLine("Your robot will work now");
+                        Console.WriteLine("Jarvis is thinking.....");
                        
                       //  Console.WriteLine($"Final Statement: {result.Text} ");
 
