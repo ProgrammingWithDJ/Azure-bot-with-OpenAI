@@ -21,17 +21,48 @@ namespace Speechtotext
             {
                 Console.WriteLine("Speak");
 
-                var result = await recog.RecognizeOnceAsync();
-
-                if(result.Reason ==ResultReason.RecognizedSpeech)
+                recog.Recognizing += (sender, eventArgs) =>
                 {
-                    Console.WriteLine(result.Text);
-                }
+                    Console.WriteLine($"Recognizing: {eventArgs.Result.Text}");
+                };
 
-                config.SpeechSynthesisVoiceName = "en-GB-RyanNeural";
-                using var synthesizer = new SpeechSynthesizer(config);
-                Console.WriteLine("Your robot will work now");
-                await synthesizer.SpeakTextAsync(result.Text);
+                recog.Recognized += async (sender, eventArgs) =>
+                {
+                    var result = eventArgs.Result;
+
+                    if (result.Reason == ResultReason.RecognizedSpeech)
+                    {
+
+                        config.SpeechSynthesisVoiceName = "en-GB-RyanNeural";
+                        using var synthesizer = new SpeechSynthesizer(config);
+
+                        Console.WriteLine("Your robot will work now");
+                       await synthesizer.SpeakTextAsync(result.Text);
+                        Console.WriteLine($"Final Statement: {result.Text} ");
+                    }
+
+
+                };
+
+                recog.SessionStarted += (sender, eventArgs) =>
+                {
+                    Console.WriteLine("Session started,, you can start speaking");
+                };
+
+
+                recog.SessionStopped += (sender, eventArgs) =>
+                {
+                    Console.WriteLine("SessionStopped");
+                };
+
+                await recog.StartContinuousRecognitionAsync().ConfigureAwait(false);
+
+                do { Console.Write("Press enter to stop"); }
+                while(Console.ReadKey().Key!= ConsoleKey.Enter);
+
+                await recog.StopContinuousRecognitionAsync().ConfigureAwait(false);
+
+
             }
 
 
