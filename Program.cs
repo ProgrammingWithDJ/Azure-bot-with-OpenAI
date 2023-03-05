@@ -1,7 +1,11 @@
 ﻿using System;
+using System.IO;
+using System.Net;
+using System.Text.Json.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.CognitiveServices.Speech;
+using Newtonsoft.Json;
 
 namespace Speechtotext
 {
@@ -12,9 +16,43 @@ namespace Speechtotext
             await SynthesizeAudioAsync();
         }
 
+        public static string openAI(string inputText)
+        {
+            var apiKey = "";
+            var model = "text-davinci-003";
+            var prompt = inputText;
+            var maxTokens = 100;
+            var temperature = 0;
+
+            var request = (HttpWebRequest)WebRequest.Create("https://api.openai.com/v1/completions");
+            request.Method = "POST";
+            request.ContentType = "application/json";
+            request.Headers.Add("Authorization", "Bearer " + apiKey);
+
+            using (var streamWriter = new StreamWriter(request.GetRequestStream()))
+            {
+                string json = "{\"model\":\"" + model + "\",\"prompt\":\"" + prompt + "\",\"max_tokens\":" + maxTokens + ",\"temperature\":" + temperature + "}";
+                streamWriter.Write(json);
+            }
+
+            var response = (HttpWebResponse)request.GetResponse();
+
+            using (var streamReader = new StreamReader(response.GetResponseStream()))
+            {
+                var result = streamReader.ReadToEnd();
+
+                dynamic jsonObj = JsonConvert.DeserializeObject(result);
+                string text = jsonObj.choices[0].text;
+                return text;
+            }
+
+            return "Someting failed";
+
+        }
+
         private static async Task SynthesizeAudioAsync()
         {
-            var config = SpeechConfig.FromSubscription("", "");
+            var config = SpeechConfig.FromSubscription("44a11e635d74467c85b5846aea9c7c0d", "eastus");
            
 
             using (var recog= new SpeechRecognizer(config))
@@ -37,8 +75,12 @@ namespace Speechtotext
                         using var synthesizer = new SpeechSynthesizer(config);
 
                         Console.WriteLine("Your robot will work now");
-                       await synthesizer.SpeakTextAsync(result.Text);
-                        Console.WriteLine($"Final Statement: {result.Text} ");
+                       
+                      //  Console.WriteLine($"Final Statement: {result.Text} ");
+
+                        var ans =openAI(result.Text);
+                        await synthesizer.SpeakTextAsync(ans);
+
                     }
 
 
@@ -57,7 +99,7 @@ namespace Speechtotext
 
                 await recog.StartContinuousRecognitionAsync().ConfigureAwait(false);
 
-                do { Console.Write("Press enter to stop"); }
+                do { Console.WriteLine("Press enter to stop"); }
                 while(Console.ReadKey().Key!= ConsoleKey.Enter);
 
                 await recog.StopContinuousRecognitionAsync().ConfigureAwait(false);
